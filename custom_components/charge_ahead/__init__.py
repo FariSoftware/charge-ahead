@@ -17,7 +17,7 @@ from .services import async_setup_services
 from .target import PlanTarget, async_build_target
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.BUTTON, Platform.SENSOR]
 
 
 @dataclass(slots=True)

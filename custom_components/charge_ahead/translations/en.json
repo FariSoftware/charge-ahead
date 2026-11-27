@@ -252,6 +252,11 @@
       "trip": {
         "name": "Next trip"
       }
+    },
+    "button": {
+      "reapply": {
+        "name": "Resend plan"
+      }
     }
   },
   "exceptions": {

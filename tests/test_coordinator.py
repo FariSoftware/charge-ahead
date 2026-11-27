@@ -272,3 +272,20 @@ async def test_plan_survives_reload_and_is_cleared(
 
     assert _state(hass, "status") == "no_trip"
     assert len(clear_calls) == 1
+
+
+async def test_reapply_button_writes_unchanged_plan(
+    hass: HomeAssistant, setup_entry, calendar_events, routes
+) -> None:
+    """The button writes the plan again even if it did not change."""
+    calendar_events.append(_event(5, "Stuttgart"))
+    routes["Stuttgart"] = (100, 60)
+    calls = async_mock_service(hass, "test", "set_plan")
+    await setup_entry(**ACTION_OPTIONS)
+    assert len(calls) == 1
+
+    await hass.services.async_call(
+        "button", "press", {"entity_id": "button.elroq_resend_plan"}, blocking=True
+    )
+
+    assert len(calls) == 2

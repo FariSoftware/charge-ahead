@@ -50,6 +50,7 @@ the calendar entity changes.
 | Distance | One-way distance in km |
 | Travel time | One-way travel time in minutes |
 | Next trip | Event summary; attributes `start`, `location` |
+| Resend plan (button) | Writes the current plan to the target again, e.g. after it was deleted there |
 
 ## Plan targets
 

@@ -176,6 +176,11 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
         if departure is not None:
             self._applied = _AppliedPlan(int(stored["target_soc"]), departure)
 
+    async def async_reapply(self) -> None:
+        """Plan again and write the result even if it did not change."""
+        self._applied = None
+        await self.async_refresh()
+
     async def _async_set_applied(self, applied: _AppliedPlan | None) -> None:
         self._applied = applied
         if applied is None:

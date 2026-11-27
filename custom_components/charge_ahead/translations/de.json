@@ -252,6 +252,11 @@
       "trip": {
         "name": "Nächste Fahrt"
       }
+    },
+    "button": {
+      "reapply": {
+        "name": "Plan erneut senden"
+      }
     }
   },
   "exceptions": {
