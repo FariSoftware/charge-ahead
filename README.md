@@ -22,7 +22,7 @@ controller (evcc or similar).
 |---|---|
 | None | The plan is only exposed as sensors (planned). |
 | Entities | Target SoC goes to a `number`/`input_number`, departure to a `datetime`/`input_datetime`. |
-| Actions | Your own action sequence runs with the variables `target_soc`, `departure` (ISO 8601) and `energy_kwh`. |
+| Actions | Your own action sequence runs with the variables `target_soc`, `departure` (ISO 8601 with offset), `departure_local` (local time, `YYYY-MM-DD HH:MM:SS`) and `energy_kwh`. |
 
 ### Example: evcc
 
@@ -34,7 +34,24 @@ action: evcc_intg.set_vehicle_plan
 data:
   vehicle: "db:1"
   soc: "{{ target_soc }}"
-  startdate: "{{ departure }}"
+  startdate: "{{ departure_local }}"
+```
+
+The evcc integration only accepts `YYYY-MM-DD HH:MM:SS` in local time, hence
+`departure_local`. It reports errors in its response instead of raising them,
+so a wrong value fails silently. To surface such errors, capture the response:
+
+```yaml
+- action: evcc_intg.set_vehicle_plan
+  data:
+    vehicle: "db:1"
+    soc: "{{ target_soc }}"
+    startdate: "{{ departure_local }}"
+  response_variable: evcc_response
+- if: "{{ 'error' in evcc_response }}"
+  then:
+    - stop: "evcc rejected the plan"
+      error: true
 ```
 
 Clear action:

@@ -51,6 +51,7 @@ async def test_action_target_renders_variables(hass: HomeAssistant) -> None:
                     "data": {
                         "soc": "{{ target_soc }}",
                         "time": "{{ departure }}",
+                        "local": "{{ departure_local }}",
                         "kwh": "{{ energy_kwh }}",
                     },
                 }
@@ -76,6 +77,9 @@ async def test_action_target_renders_variables(hass: HomeAssistant) -> None:
         DEPARTURE
     )
     assert calls[0].data["kwh"] == 12.5
+    assert calls[0].data["local"] == dt_util.as_local(
+        datetime.fromisoformat(DEPARTURE)
+    ).strftime("%Y-%m-%d %H:%M:%S")
 
 
 async def test_action_target_clear(hass: HomeAssistant) -> None:

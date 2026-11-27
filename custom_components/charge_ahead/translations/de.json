@@ -32,7 +32,7 @@
       },
       "target_action": {
         "title": "Ziel-Aktionen",
-        "description": "Verfügbare Variablen: target_soc (%), departure (ISO 8601) und energy_kwh. Templates funktionieren nur im YAML-Modus: im Menü der Aktion (drei Punkte) In YAML bearbeiten wählen. Ein Beispiel für evcc steht in der README.",
+        "description": "Verfügbare Variablen: target_soc (%), departure (ISO 8601 mit Offset), departure_local (Ortszeit, JJJJ-MM-TT HH:MM:SS) und energy_kwh. Templates funktionieren nur im YAML-Modus: im Menü der Aktion (drei Punkte) In YAML bearbeiten wählen. Ein Beispiel für evcc steht in der README.",
         "data": {
           "set_action": "Plan setzen",
           "clear_action": "Plan löschen"
@@ -75,7 +75,7 @@
       },
       "target_action": {
         "title": "Ziel-Aktionen",
-        "description": "Verfügbare Variablen: target_soc (%), departure (ISO 8601) und energy_kwh. Templates funktionieren nur im YAML-Modus: im Menü der Aktion (drei Punkte) In YAML bearbeiten wählen. Ein Beispiel für evcc steht in der README.",
+        "description": "Verfügbare Variablen: target_soc (%), departure (ISO 8601 mit Offset), departure_local (Ortszeit, JJJJ-MM-TT HH:MM:SS) und energy_kwh. Templates funktionieren nur im YAML-Modus: im Menü der Aktion (drei Punkte) In YAML bearbeiten wählen. Ein Beispiel für evcc steht in der README.",
         "data": {
           "set_action": "Plan setzen",
           "clear_action": "Plan löschen"

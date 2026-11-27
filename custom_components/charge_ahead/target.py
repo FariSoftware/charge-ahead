@@ -14,6 +14,7 @@ from typing import Any, Protocol
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.script import Script, async_validate_actions_config
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CLEAR_ACTION,
@@ -41,6 +42,11 @@ class ChargePlan:
         return {
             "target_soc": self.target_soc,
             "departure": self.departure.isoformat(),
+            # Local wall-clock time without offset, the format some integrations
+            # (e.g. the evcc integration) expect.
+            "departure_local": dt_util.as_local(self.departure).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
             "energy_kwh": self.energy_kwh,
         }
 
