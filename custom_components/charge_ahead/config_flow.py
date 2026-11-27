@@ -108,6 +108,37 @@ def evcc_vehicles(hass) -> list[selector.SelectOptionDict]:
     ]
 
 
+_EVCC_VEHICLE_SENSORS = {
+    CONF_SOC_ENTITY: "_vehicle_soc",
+    CONF_RANGE_ENTITY: "_vehicle_range",
+    CONF_CAPACITY_ENTITY: "_vehicle_capacity",
+    CONF_SOC_LIMIT_ENTITY: "_vehicle_limit_soc",
+}
+
+
+def evcc_vehicle_sensors(hass) -> dict[str, str]:
+    """Find the evcc integration's vehicle sensors for the vehicle step."""
+    found: dict[str, str] = {}
+    registry = er.async_get(hass)
+    for entry in registry.entities.values():
+        if entry.platform != EVCC_DOMAIN or entry.domain != "sensor":
+            continue
+        for key, suffix in _EVCC_VEHICLE_SENSORS.items():
+            if key not in found and entry.unique_id.endswith(suffix):
+                found[key] = entry.entity_id
+    return found
+
+
+async def _vehicle_suggestions(handler: SchemaCommonFlowHandler) -> dict[str, Any]:
+    """Prefill the vehicle step from evcc the first time it is shown."""
+    if CONF_CAPACITY_KWH in handler.options:
+        return dict(handler.options)
+    return {
+        **evcc_vehicle_sensors(handler.parent_handler.hass),
+        **handler.options,
+    }
+
+
 async def _evcc_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
     hass = handler.parent_handler.hass
     vehicles = evcc_vehicles(hass)
@@ -277,7 +308,9 @@ COMMON_STEPS = {
     "routing": SchemaFlowFormStep(
         ROUTING_SCHEMA, validate_user_input=_validate_routing, next_step="vehicle"
     ),
-    "vehicle": SchemaFlowFormStep(VEHICLE_SCHEMA, next_step="planning"),
+    "vehicle": SchemaFlowFormStep(
+        VEHICLE_SCHEMA, next_step="planning", suggested_values=_vehicle_suggestions
+    ),
     "planning": SchemaFlowFormStep(
         PLANNING_SCHEMA, validate_user_input=_validate_planning, next_step="target"
     ),

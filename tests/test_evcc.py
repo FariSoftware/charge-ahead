@@ -150,3 +150,41 @@ async def test_evcc_error_response_is_a_failure(
     status = hass.states.get("sensor.elroq_status")
     assert status.state == "target_failed"
     assert "time data" in status.attributes["error"]
+
+
+async def test_vehicle_step_prefilled_from_evcc(hass: HomeAssistant, evcc) -> None:
+    """The vehicle step suggests evcc's vehicle sensors."""
+    registry = er.async_get(hass)
+    for unique_id in (
+        "evcc_intg.evcc_garage_vehicle_soc",
+        "evcc_intg.evcc_garage_vehicle_range",
+        "evcc_intg.evcc_elroq_vehicle_capacity",
+        "evcc_intg.evcc_garage_vehicle_limit_soc",
+    ):
+        registry.async_get_or_create(
+            "sensor",
+            "evcc_intg",
+            unique_id,
+            suggested_object_id=unique_id.split(".", 1)[1],
+        )
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    flow_id = result["flow_id"]
+    await hass.config_entries.flow.async_configure(
+        flow_id, {"name": "Elroq", CONF_CALENDAR_ENTITY: "calendar.car"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        flow_id, {CONF_ROUTING_PROVIDER: "waze"}
+    )
+    assert result["step_id"] == "vehicle"
+    suggested = {
+        str(key): key.description.get("suggested_value")
+        for key in result["data_schema"].schema
+        if key.description
+    }
+    assert suggested["soc_entity"] == "sensor.evcc_garage_vehicle_soc"
+    assert suggested["range_entity"] == "sensor.evcc_garage_vehicle_range"
+    assert suggested["capacity_entity"] == "sensor.evcc_elroq_vehicle_capacity"
+    assert suggested["soc_limit_entity"] == "sensor.evcc_garage_vehicle_limit_soc"
