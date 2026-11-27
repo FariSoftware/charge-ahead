@@ -70,9 +70,26 @@ class TripPlan:
     warnings: frozenset[PlanWarning] = field(default_factory=frozenset)
 
 
+_VIRTUAL_LOCATIONS = frozenset(
+    {"online", "remote", "virtual", "zoom", "teams", "webex"}
+)
+
+
+def is_virtual_location(location: str) -> bool:
+    """Return whether a location is an online meeting rather than a place."""
+    text = location.strip().lower()
+    return (
+        text in _VIRTUAL_LOCATIONS
+        or text.startswith(("http://", "https://"))
+        or "://" in text
+    )
+
+
 def is_trip(event: Trip) -> bool:
     """Return whether an event counts as a trip."""
-    return not event.all_day and bool(event.location and event.location.strip())
+    if event.all_day or not event.location or not event.location.strip():
+        return False
+    return not is_virtual_location(event.location)
 
 
 def next_trip(events: Iterable[Trip], now: datetime) -> Trip | None:

@@ -34,6 +34,12 @@ class TestTripSelection:
     def test_event_without_location_is_no_trip(self, location) -> None:
         assert not is_trip(_trip(5, location=location))
 
+    @pytest.mark.parametrize(
+        "location", ["Online", "teams", "https://zoom.us/j/123", "msteams://x"]
+    )
+    def test_online_event_is_no_trip(self, location) -> None:
+        assert not is_trip(_trip(5, location=location))
+
     def test_next_trip_picks_earliest_future_trip(self) -> None:
         events = [
             _trip(-1),

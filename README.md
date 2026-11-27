@@ -17,8 +17,8 @@ controller (evcc or similar).
 ## How it works
 
 1. Reads the trip calendar for the next days (`calendar.get_events`). A trip is
-   any timed event with a location; all-day events and events without a
-   location are ignored. The next upcoming trip is planned.
+   any timed event with a location; all-day events, events without a
+   location and online events ("Online", meeting links) are ignored. The next upcoming trip is planned.
 2. Routes from your home zone to the location with the **Google Maps Travel
    Time** or **Waze Travel Time** integration (one of them must be set up).
    Locations with a place name and the address on separate lines (Apple

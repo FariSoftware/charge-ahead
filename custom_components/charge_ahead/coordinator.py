@@ -17,6 +17,7 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 import voluptuous as vol
@@ -73,6 +74,8 @@ if TYPE_CHECKING:
     from . import ChargeAheadConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
+
+STORAGE_VERSION = 1
 
 
 @dataclass(slots=True)
@@ -153,9 +156,37 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
             ),
         )
         self.target = target
+        self._store: Store[dict[str, Any]] = Store(
+            hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
+        )
         self._applied: _AppliedPlan | None = None
         self._route_cache: dict[str, tuple[datetime, Route | None]] = {}
         self._notified: set[tuple[str, str]] = set()
+
+    async def async_load(self) -> None:
+        """Restore the last plan written to the target.
+
+        Without this, a plan written before a restart or reload would never be
+        cleared if its trip disappears (for example after switching calendars).
+        """
+        stored = await self._store.async_load()
+        if not stored:
+            return
+        departure = dt_util.parse_datetime(stored.get("departure", ""))
+        if departure is not None:
+            self._applied = _AppliedPlan(int(stored["target_soc"]), departure)
+
+    async def _async_set_applied(self, applied: _AppliedPlan | None) -> None:
+        self._applied = applied
+        if applied is None:
+            await self._store.async_remove()
+            return
+        await self._store.async_save(
+            {
+                "target_soc": applied.target_soc,
+                "departure": applied.departure.isoformat(),
+            }
+        )
 
     @callback
     def async_track_calendar(self) -> None:
@@ -338,7 +369,7 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
             ),
             Context(),
         )
-        self._applied = applied
+        await self._async_set_applied(applied)
 
     async def _async_clear(self, now: datetime) -> None:
         """Clear a written plan whose trip is gone before its departure."""
@@ -350,7 +381,7 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
             except (HomeAssistantError, vol.Invalid) as err:
                 _LOGGER.error("Clearing the plan on the target failed: %s", err)
                 return
-        self._applied = None
+        await self._async_set_applied(None)
 
     def _forget_other_trips(self, trip: Trip) -> None:
         key = self._trip_key(trip)

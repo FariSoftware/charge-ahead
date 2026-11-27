@@ -254,3 +254,21 @@ def test_parse_all_day_event() -> None:
     trip = parse_event({"start": "2026-12-01", "summary": "Holiday", "location": "X"})
     assert trip is not None
     assert trip.all_day
+
+
+async def test_plan_survives_reload_and_is_cleared(
+    hass: HomeAssistant, setup_entry, calendar_events, routes
+) -> None:
+    """A plan written before a reload is cleared when its trip is gone after it."""
+    calendar_events.append(_event(5, "Stuttgart"))
+    routes["Stuttgart"] = (100, 60)
+    async_mock_service(hass, "test", "set_plan")
+    clear_calls = async_mock_service(hass, "test", "clear_plan")
+    entry = await setup_entry(**ACTION_OPTIONS)
+
+    calendar_events.clear()
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert _state(hass, "status") == "no_trip"
+    assert len(clear_calls) == 1
