@@ -26,6 +26,7 @@ from .const import (
     CONF_CALENDAR_ENTITY,
     CONF_CAPACITY_ENTITY,
     CONF_CAPACITY_KWH,
+    CONF_CHARGE_POWER,
     CONF_CONSUMPTION,
     CONF_DEPARTURE_BUFFER,
     CONF_GOOGLE_ENTRY,
@@ -41,6 +42,7 @@ from .const import (
     CONF_UPDATE_INTERVAL,
     CONF_WAZE_REGION,
     DEFAULT_CAPACITY_KWH,
+    DEFAULT_CHARGE_POWER,
     DEFAULT_CONSUMPTION,
     DEFAULT_DEPARTURE_BUFFER,
     DEFAULT_HOME_ZONE,
@@ -50,6 +52,7 @@ from .const import (
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_WAZE_REGION,
     DOMAIN,
+    MAX_CHAINED_TRIPS,
     ROUTE_CACHE_TTL_MIN,
     ROUTE_FAILURE_TTL_MIN,
     PlanStatus,
@@ -57,15 +60,17 @@ from .const import (
 )
 from .notifications import async_send, render_message
 from .planner import (
+    Leg,
     PlannerSettings,
     PlanWarning,
     Route,
     Trip,
     TripPlan,
     Vehicle,
+    can_fully_recharge,
     consumption_from_range,
-    next_trip,
-    plan_trip,
+    plan_chain,
+    upcoming_trips,
 )
 from .routing import RoutingError, async_route_location
 from .target import ChargePlan, PlanTarget
@@ -112,16 +117,24 @@ def parse_event(event: dict[str, Any]) -> Trip | None:
             summary=event.get("summary", ""),
             all_day=True,
         )
-    start = dt_util.parse_datetime(raw_start)
+    start = _parse_local(raw_start)
     if start is None:
         return None
-    if start.tzinfo is None:
-        start = start.replace(tzinfo=dt_util.get_default_time_zone())
+    end = _parse_local(event.get("end"))
     return Trip(
         start=start,
         location=event.get("location"),
         summary=event.get("summary", ""),
+        end=end if end and end >= start else None,
     )
+
+
+def _parse_local(raw: str | None) -> datetime | None:
+    if not raw or (value := dt_util.parse_datetime(raw)) is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=dt_util.get_default_time_zone())
+    return value
 
 
 def _float_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
@@ -224,12 +237,13 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
 
     async def _async_update_data(self) -> ChargeAheadData:
         now = dt_util.now()
-        trip = next_trip(await self._async_fetch_trips(now), now)
+        trips = upcoming_trips(await self._async_fetch_trips(now), now)
 
-        if trip is None:
+        if not trips:
             await self._async_clear(now)
             return ChargeAheadData(status=PlanStatus.NO_TRIP)
 
+        trip = trips[0]
         self._forget_other_trips(trip)
         location = trip.location or ""
 
@@ -250,7 +264,8 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
                 status=PlanStatus.VEHICLE_DATA_MISSING, trip=trip, route=route
             )
 
-        plan = plan_trip(trip, route, vehicle, self.settings, now)
+        legs = await self._async_chain(Leg(trip, route), trips[1:], vehicle, now)
+        plan = plan_chain(legs, vehicle, self.settings, now)
         data = ChargeAheadData(
             status=PlanStatus.PLANNED,
             trip=trip,
@@ -274,6 +289,23 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
             data.status = PlanStatus.TARGET_FAILED
             data.error = str(err)
         return data
+
+    async def _async_chain(
+        self, first: Leg, following: list[Trip], vehicle: Vehicle, now: datetime
+    ) -> list[Leg]:
+        """Collect follow-up trips that cannot be fully recharged in between."""
+        legs = [first]
+        for trip in following[:MAX_CHAINED_TRIPS]:
+            # The gap to the event start is an upper bound for the time at home;
+            # if even that allows a full charge, later trips do not matter.
+            if can_fully_recharge(trip.start - legs[-1].return_home(), vehicle):
+                break
+            try:
+                route = await self._async_route(trip.location or "", now)
+            except RoutingError:
+                break
+            legs.append(Leg(trip, route))
+        return legs
 
     async def _async_fetch_trips(self, now: datetime) -> list[Trip]:
         calendar = self.options[CONF_CALENDAR_ENTITY]
@@ -358,6 +390,9 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
                 capacity_kwh=capacity,
                 consumption_kwh_per_100km=consumption,
                 soc_limit=int(limit) if limit is not None else None,
+                charge_power_kw=float(
+                    self.options.get(CONF_CHARGE_POWER, DEFAULT_CHARGE_POWER)
+                ),
             ),
             consumption,
         )

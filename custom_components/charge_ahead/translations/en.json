@@ -34,13 +34,15 @@
           "soc_entity": "State of charge entity",
           "range_entity": "Range entity",
           "consumption_kwh_per_100km": "Consumption",
-          "soc_limit_entity": "Charge limit entity"
+          "soc_limit_entity": "Charge limit entity",
+          "charge_power_kw": "Charging power at home"
         },
         "data_description": {
           "soc_entity": "Together with range, used to derive the current consumption.",
           "range_entity": "The car's own range estimate in km.",
           "consumption_kwh_per_100km": "Used when state of charge or range is not available.",
-          "soc_limit_entity": "A warning is sent when a trip needs more than this limit."
+          "soc_limit_entity": "A warning is sent when a trip needs more than this limit.",
+          "charge_power_kw": "Decides whether the time at home between two trips is enough to recharge."
         }
       },
       "planning": {
@@ -133,13 +135,15 @@
           "soc_entity": "State of charge entity",
           "range_entity": "Range entity",
           "consumption_kwh_per_100km": "Consumption",
-          "soc_limit_entity": "Charge limit entity"
+          "soc_limit_entity": "Charge limit entity",
+          "charge_power_kw": "Charging power at home"
         },
         "data_description": {
           "soc_entity": "Together with range, used to derive the current consumption.",
           "range_entity": "The car's own range estimate in km.",
           "consumption_kwh_per_100km": "Used when state of charge or range is not available.",
-          "soc_limit_entity": "A warning is sent when a trip needs more than this limit."
+          "soc_limit_entity": "A warning is sent when a trip needs more than this limit.",
+          "charge_power_kw": "Decides whether the time at home between two trips is enough to recharge."
         }
       },
       "planning": {
@@ -231,6 +235,9 @@
         "state_attributes": {
           "warnings": {
             "name": "Warnings"
+          },
+          "chained_trips": {
+            "name": "Follow-up trips included"
           }
         }
       },

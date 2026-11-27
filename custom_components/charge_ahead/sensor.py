@@ -48,6 +48,7 @@ SENSORS: tuple[ChargeAheadSensorDescription, ...] = (
             "warnings": sorted(w.value for w in data.warnings),
             "error": data.error,
             "consumption_kwh_per_100km": data.consumption_kwh_per_100km,
+            "chained_trips": data.plan.chained_trips if data.plan else 0,
         },
     ),
     ChargeAheadSensorDescription(

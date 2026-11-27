@@ -23,6 +23,7 @@ CONF_SOC_ENTITY: Final = "soc_entity"
 CONF_RANGE_ENTITY: Final = "range_entity"
 CONF_CONSUMPTION: Final = "consumption_kwh_per_100km"
 CONF_SOC_LIMIT_ENTITY: Final = "soc_limit_entity"
+CONF_CHARGE_POWER: Final = "charge_power_kw"
 
 # Planning
 CONF_DEPARTURE_BUFFER: Final = "departure_buffer_min"
@@ -43,6 +44,7 @@ DEFAULT_HOME_ZONE: Final = "zone.home"
 DEFAULT_WAZE_REGION: Final = "eu"
 DEFAULT_CAPACITY_KWH: Final = 50.0
 DEFAULT_CONSUMPTION: Final = 18.0
+DEFAULT_CHARGE_POWER: Final = 11.0
 DEFAULT_DEPARTURE_BUFFER: Final = 15
 DEFAULT_RESERVE_PERCENT: Final = 20
 DEFAULT_SOC_STEP: Final = 1
@@ -51,6 +53,7 @@ DEFAULT_UPDATE_INTERVAL: Final = 15
 
 ROUTE_CACHE_TTL_MIN: Final = 60
 ROUTE_FAILURE_TTL_MIN: Final = 30
+MAX_CHAINED_TRIPS: Final = 5
 
 ATTR_CONFIG_ENTRY_ID: Final = "config_entry_id"
 ATTR_TARGET_SOC: Final = "target_soc"

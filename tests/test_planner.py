@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from custom_components.charge_ahead.planner import (
+    Leg,
     PlannerSettings,
     PlanWarning,
     Route,
@@ -15,6 +16,7 @@ from custom_components.charge_ahead.planner import (
     consumption_from_range,
     is_trip,
     next_trip,
+    plan_chain,
     plan_trip,
 )
 
@@ -135,3 +137,56 @@ class TestConsumptionFromRange:
     )
     def test_invalid_input(self, capacity, soc, range_km) -> None:
         assert consumption_from_range(capacity, soc, range_km) is None
+
+
+class TestPlanChain:
+    """Follow-up trips that cannot be recharged in between."""
+
+    ELROQ_11KW = Vehicle(
+        capacity_kwh=56, consumption_kwh_per_100km=15.5, charge_power_kw=11
+    )
+
+    def _legs(self, gap: timedelta) -> list[Leg]:
+        # Leg 1: 100 km, 1 h each way, event 5 h from now lasting 1 h,
+        # back home at +7 h. Leg 2: 50 km, 1 h each way, departure after gap.
+        first = Leg(
+            Trip(
+                start=NOW + timedelta(hours=5),
+                end=NOW + timedelta(hours=6),
+                location="A",
+            ),
+            Route(distance_km=100, duration=timedelta(hours=1)),
+        )
+        second_start = NOW + timedelta(hours=7) + gap + timedelta(minutes=75)
+        second = Leg(
+            Trip(start=second_start, location="B"),
+            Route(distance_km=50, duration=timedelta(hours=1)),
+        )
+        return [first, second]
+
+    def test_short_gap_raises_first_target(self) -> None:
+        # Reserve 11.2 kWh. Leg 2 needs 15.5 + 11.2 = 26.7 kWh at departure;
+        # 1 h at 11 kW recharges 11 kWh, so 15.7 kWh must be left after leg 1.
+        # Leg 1: 31 + 15.7 = 46.7 kWh = 83.4 % -> 84 %.
+        plan = plan_chain(
+            self._legs(timedelta(hours=1)), self.ELROQ_11KW, PlannerSettings(), NOW
+        )
+
+        assert plan.target_soc == 84
+        assert plan.energy_kwh == 35.5
+        assert plan.chained_trips == 1
+        assert plan.trip.location == "A"
+
+    def test_long_gap_plans_first_trip_alone(self) -> None:
+        plan = plan_chain(
+            self._legs(timedelta(hours=6)), self.ELROQ_11KW, PlannerSettings(), NOW
+        )
+
+        assert plan.target_soc == 76
+        assert plan.chained_trips == 0
+
+    def test_unknown_charge_power_ignores_follow_up(self) -> None:
+        plan = plan_chain(self._legs(timedelta(hours=1)), ELROQ, PlannerSettings(), NOW)
+
+        assert plan.target_soc == 76
+        assert plan.chained_trips == 0

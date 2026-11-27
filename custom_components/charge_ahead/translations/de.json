@@ -34,13 +34,15 @@
           "soc_entity": "Entität Ladezustand",
           "range_entity": "Entität Reichweite",
           "consumption_kwh_per_100km": "Verbrauch",
-          "soc_limit_entity": "Entität Ladelimit"
+          "soc_limit_entity": "Entität Ladelimit",
+          "charge_power_kw": "Ladeleistung zu Hause"
         },
         "data_description": {
           "soc_entity": "Zusammen mit der Reichweite wird daraus der aktuelle Verbrauch abgeleitet.",
           "range_entity": "Reichweitenschätzung des Autos in km.",
           "consumption_kwh_per_100km": "Gilt, wenn Ladezustand oder Reichweite nicht verfügbar sind.",
-          "soc_limit_entity": "Braucht eine Fahrt mehr als dieses Limit, kommt eine Warnung."
+          "soc_limit_entity": "Braucht eine Fahrt mehr als dieses Limit, kommt eine Warnung.",
+          "charge_power_kw": "Entscheidet, ob die Zeit zu Hause zwischen zwei Fahrten zum Nachladen reicht."
         }
       },
       "planning": {
@@ -133,13 +135,15 @@
           "soc_entity": "Entität Ladezustand",
           "range_entity": "Entität Reichweite",
           "consumption_kwh_per_100km": "Verbrauch",
-          "soc_limit_entity": "Entität Ladelimit"
+          "soc_limit_entity": "Entität Ladelimit",
+          "charge_power_kw": "Ladeleistung zu Hause"
         },
         "data_description": {
           "soc_entity": "Zusammen mit der Reichweite wird daraus der aktuelle Verbrauch abgeleitet.",
           "range_entity": "Reichweitenschätzung des Autos in km.",
           "consumption_kwh_per_100km": "Gilt, wenn Ladezustand oder Reichweite nicht verfügbar sind.",
-          "soc_limit_entity": "Braucht eine Fahrt mehr als dieses Limit, kommt eine Warnung."
+          "soc_limit_entity": "Braucht eine Fahrt mehr als dieses Limit, kommt eine Warnung.",
+          "charge_power_kw": "Entscheidet, ob die Zeit zu Hause zwischen zwei Fahrten zum Nachladen reicht."
         }
       },
       "planning": {
@@ -231,6 +235,9 @@
         "state_attributes": {
           "warnings": {
             "name": "Warnungen"
+          },
+          "chained_trips": {
+            "name": "Berücksichtigte Folgefahrten"
           }
         }
       },

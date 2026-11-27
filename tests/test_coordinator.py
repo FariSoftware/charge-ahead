@@ -289,3 +289,19 @@ async def test_reapply_button_writes_unchanged_plan(
     )
 
     assert len(calls) == 2
+
+
+async def test_follow_up_trip_raises_target(
+    hass: HomeAssistant, setup_entry, calendar_events, routes
+) -> None:
+    """A second trip shortly after the first is included in the plan."""
+    calendar_events.append(_event(5, "Stuttgart"))
+    calendar_events.append(_event(9.25, "Sindelfingen"))
+    routes["Stuttgart"] = (100, 60)
+    routes["Sindelfingen"] = (50, 60)
+
+    await setup_entry()
+
+    assert _state(hass, "target_soc") == "84"
+    status = hass.states.get("sensor.elroq_status")
+    assert status.attributes["chained_trips"] == 1

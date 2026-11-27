@@ -20,6 +20,7 @@ from .const import (
     CONF_CALENDAR_ENTITY,
     CONF_CAPACITY_ENTITY,
     CONF_CAPACITY_KWH,
+    CONF_CHARGE_POWER,
     CONF_CLEAR_ACTION,
     CONF_CONSUMPTION,
     CONF_DEPARTURE_BUFFER,
@@ -40,6 +41,7 @@ from .const import (
     CONF_UPDATE_INTERVAL,
     CONF_WAZE_REGION,
     DEFAULT_CAPACITY_KWH,
+    DEFAULT_CHARGE_POWER,
     DEFAULT_CONSUMPTION,
     DEFAULT_DEPARTURE_BUFFER,
     DEFAULT_HOME_ZONE,
@@ -125,6 +127,9 @@ VEHICLE_SCHEMA = vol.Schema(
         ),
         vol.Optional(CONF_SOC_LIMIT_ENTITY): _entity(
             "sensor", "number", "select", "input_number"
+        ),
+        vol.Required(CONF_CHARGE_POWER, default=DEFAULT_CHARGE_POWER): _number(
+            1, 350, 0.1, "kW"
         ),
     }
 )

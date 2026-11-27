@@ -27,6 +27,9 @@ controller (evcc or similar).
    - departure = event start − travel time − buffer
    - energy = distance × 2 × consumption
    - target SoC = energy / battery capacity + reserve, rounded up to the SoC step
+   - follow-up trips: if the next trips leave too little time at home to
+     recharge (based on the charging power), the shortfall is added to the
+     current target, so the first departure already carries enough energy
 4. Writes the plan to the target once it changes, and runs the clear action if
    the trip disappears before departure.
 5. Sends a notification when the target SoC is above the charge limit, above
@@ -43,10 +46,10 @@ the calendar entity changes.
 
 | Entity | Content |
 |---|---|
-| Status | `planned`, `no_trip`, `departure_passed`, `routing_failed`, `vehicle_data_missing`, `target_failed`; attributes `warnings`, `error`, `consumption_kwh_per_100km` |
+| Status | `planned`, `no_trip`, `departure_passed`, `routing_failed`, `vehicle_data_missing`, `target_failed`; attributes `warnings`, `error`, `consumption_kwh_per_100km`, `chained_trips` |
 | Departure | Planned departure time |
 | Target SoC | Target state of charge in % |
-| Energy needed | Energy for the round trip in kWh |
+| Energy needed | Energy needed at departure above the reserve, in kWh (includes follow-up trips) |
 | Distance | One-way distance in km |
 | Travel time | One-way travel time in minutes |
 | Next trip | Event summary; attributes `start`, `location` |
