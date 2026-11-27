@@ -305,3 +305,30 @@ async def test_follow_up_trip_raises_target(
     assert _state(hass, "target_soc") == "84"
     status = hass.states.get("sensor.elroq_status")
     assert status.attributes["chained_trips"] == 1
+
+
+async def test_departure_passing_after_plan_was_written_is_silent(
+    hass: HomeAssistant,
+    setup_entry,
+    calendar_events,
+    routes,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Once the plan was written, reaching the departure is no missed departure."""
+    calendar_events.append(_event(2, "Stuttgart"))
+    routes["Stuttgart"] = (30, 40)
+    set_calls = async_mock_service(hass, "test", "set_plan")
+    notify_calls = async_mock_service(hass, "notify", "mobile_app_phone")
+    entry = await setup_entry(
+        **ACTION_OPTIONS, **{CONF_NOTIFY: "notify.mobile_app_phone"}
+    )
+    assert len(set_calls) == 1
+
+    # Departure is at +1:05; move past it while the event still lies ahead.
+    freezer.tick(timedelta(minutes=80))
+    await entry.runtime_data.coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert _state(hass, "status") == "planned"
+    assert notify_calls == []
+    assert len(set_calls) == 1

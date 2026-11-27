@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta
 import logging
 from typing import TYPE_CHECKING, Any
@@ -100,6 +100,7 @@ class ChargeAheadData:
 class _AppliedPlan:
     target_soc: int
     departure: datetime
+    trip_key: str | None = None
 
 
 def parse_event(event: dict[str, Any]) -> Trip | None:
@@ -187,7 +188,9 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
             return
         departure = dt_util.parse_datetime(stored.get("departure", ""))
         if departure is not None:
-            self._applied = _AppliedPlan(int(stored["target_soc"]), departure)
+            self._applied = _AppliedPlan(
+                int(stored["target_soc"]), departure, stored.get("trip_key")
+            )
 
     async def async_reapply(self) -> None:
         """Plan again and write the result even if it did not change."""
@@ -203,6 +206,7 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
             {
                 "target_soc": applied.target_soc,
                 "departure": applied.departure.isoformat(),
+                "trip_key": applied.trip_key,
             }
         )
 
@@ -274,6 +278,17 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
             consumption_kwh_per_100km=round(consumption, 2),
             warnings=plan.warnings,
         )
+
+        if PlanWarning.DEPARTURE_PASSED in plan.warnings and self._written_for(trip):
+            # The plan for this trip was written before departure; the car has
+            # (or should have) left. That is the normal course, not a miss.
+            plan = replace(
+                plan, warnings=plan.warnings - {PlanWarning.DEPARTURE_PASSED}
+            )
+            data.plan = plan
+            data.warnings = plan.warnings
+            await self._async_notify_warnings(plan, vehicle)
+            return data
 
         await self._async_notify_warnings(plan, vehicle)
 
@@ -397,8 +412,16 @@ class ChargeAheadCoordinator(DataUpdateCoordinator[ChargeAheadData]):
             consumption,
         )
 
+    def _written_for(self, trip: Trip) -> bool:
+        """Return whether the current plan on the target belongs to trip."""
+        return self._applied is not None and self._applied.trip_key == self._trip_key(
+            trip
+        )
+
     async def _async_apply(self, plan: TripPlan) -> None:
-        applied = _AppliedPlan(plan.target_soc, plan.departure)
+        applied = _AppliedPlan(
+            plan.target_soc, plan.departure, self._trip_key(plan.trip)
+        )
         if applied == self._applied:
             return
         await self.target.async_apply(
