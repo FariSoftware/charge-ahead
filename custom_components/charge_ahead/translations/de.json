@@ -1,0 +1,132 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Charge Ahead",
+        "description": "Plant das Laden anhand der Fahrten in einem Kalender. Jeder Termin mit Ort ist eine Fahrt.",
+        "data": {
+          "name": "Name",
+          "calendar_entity": "Fahrtenkalender"
+        }
+      },
+      "target": {
+        "title": "Ziel des Plans",
+        "description": "Wohin sollen Ziel-SoC und Abfahrtszeit geschrieben werden?",
+        "menu_options": {
+          "target_none": "Nirgendwohin, nur Sensoren bereitstellen",
+          "target_entities": "In Entitäten schreiben",
+          "target_action": "Aktionen ausführen"
+        }
+      },
+      "target_none": {
+        "title": "Kein Ziel",
+        "description": "Charge Ahead stellt den Plan nur als Sensoren bereit. Diese lassen sich in eigenen Automationen verwenden."
+      },
+      "target_entities": {
+        "title": "Ziel-Entitäten",
+        "description": "Charge Ahead schreibt Ziel-SoC und Abfahrtszeit in diese Entitäten.",
+        "data": {
+          "target_soc_entity": "Entität für Ziel-SoC",
+          "departure_entity": "Entität für Abfahrtszeit"
+        }
+      },
+      "target_action": {
+        "title": "Ziel-Aktionen",
+        "description": "Verfügbare Variablen: `target_soc` (%), `departure` (ISO 8601), `energy_kwh`. Beispiel für evcc: `evcc_intg.set_vehicle_plan` mit `soc: \"{{ target_soc }}\"` und `startdate: \"{{ departure }}\"`.",
+        "data": {
+          "set_action": "Plan setzen",
+          "clear_action": "Plan löschen"
+        },
+        "data_description": {
+          "set_action": "Läuft, wenn ein Plan entsteht oder sich ändert.",
+          "clear_action": "Läuft, wenn die Fahrt wegfällt. Optional."
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Charge Ahead",
+        "data": {
+          "calendar_entity": "Fahrtenkalender"
+        }
+      },
+      "target": {
+        "title": "Ziel des Plans",
+        "description": "Wohin sollen Ziel-SoC und Abfahrtszeit geschrieben werden?",
+        "menu_options": {
+          "target_none": "Nirgendwohin, nur Sensoren bereitstellen",
+          "target_entities": "In Entitäten schreiben",
+          "target_action": "Aktionen ausführen"
+        }
+      },
+      "target_none": {
+        "title": "Kein Ziel",
+        "description": "Charge Ahead stellt den Plan nur als Sensoren bereit. Diese lassen sich in eigenen Automationen verwenden."
+      },
+      "target_entities": {
+        "title": "Ziel-Entitäten",
+        "description": "Charge Ahead schreibt Ziel-SoC und Abfahrtszeit in diese Entitäten.",
+        "data": {
+          "target_soc_entity": "Entität für Ziel-SoC",
+          "departure_entity": "Entität für Abfahrtszeit"
+        }
+      },
+      "target_action": {
+        "title": "Ziel-Aktionen",
+        "description": "Verfügbare Variablen: `target_soc` (%), `departure` (ISO 8601), `energy_kwh`. Beispiel für evcc: `evcc_intg.set_vehicle_plan` mit `soc: \"{{ target_soc }}\"` und `startdate: \"{{ departure }}\"`.",
+        "data": {
+          "set_action": "Plan setzen",
+          "clear_action": "Plan löschen"
+        },
+        "data_description": {
+          "set_action": "Läuft, wenn ein Plan entsteht oder sich ändert.",
+          "clear_action": "Läuft, wenn die Fahrt wegfällt. Optional."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_found": {
+      "message": "Kein Charge-Ahead-Eintrag mit der ID {entry_id}."
+    },
+    "entry_not_loaded": {
+      "message": "Der Charge-Ahead-Eintrag {entry_id} ist nicht geladen."
+    }
+  },
+  "services": {
+    "apply_plan": {
+      "name": "Plan anwenden",
+      "description": "Schreibt einen Ladeplan in das konfigurierte Ziel. Nützlich zum Testen des Ziels.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Der Charge-Ahead-Eintrag, dessen Ziel verwendet wird."
+        },
+        "target_soc": {
+          "name": "Ziel-SoC",
+          "description": "Ladezustand, der bis zur Abfahrt erreicht sein soll."
+        },
+        "departure": {
+          "name": "Abfahrt",
+          "description": "Zeitpunkt, bis zu dem der Ziel-SoC erreicht sein muss."
+        },
+        "energy_kwh": {
+          "name": "Energie",
+          "description": "Energiebedarf der Fahrt. Optional."
+        }
+      }
+    },
+    "clear_plan": {
+      "name": "Plan löschen",
+      "description": "Führt die Lösch-Aktion des konfigurierten Ziels aus.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Der Charge-Ahead-Eintrag, dessen Ziel verwendet wird."
+        }
+      }
+    }
+  }
+}

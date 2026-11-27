@@ -1,0 +1,12 @@
+{
+  "domain": "charge_ahead",
+  "name": "Charge Ahead",
+  "codeowners": ["@matspi"],
+  "config_flow": true,
+  "documentation": "https://github.com/FariSoftware/charge-ahead",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/FariSoftware/charge-ahead/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

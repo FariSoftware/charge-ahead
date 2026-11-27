@@ -1,0 +1,35 @@
+apply_plan:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: charge_ahead
+    target_soc:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    departure:
+      required: true
+      selector:
+        datetime:
+    energy_kwh:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 200
+          step: 0.1
+          unit_of_measurement: kWh
+          mode: box
+
+clear_plan:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: charge_ahead

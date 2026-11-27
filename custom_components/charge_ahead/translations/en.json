@@ -1,0 +1,132 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Charge Ahead",
+        "description": "Plans charging from the trips in a calendar. Each event with a location is a trip.",
+        "data": {
+          "name": "Name",
+          "calendar_entity": "Trip calendar"
+        }
+      },
+      "target": {
+        "title": "Plan target",
+        "description": "Where should the computed target SoC and departure time go?",
+        "menu_options": {
+          "target_none": "Nowhere, only provide sensors",
+          "target_entities": "Write into entities",
+          "target_action": "Run actions"
+        }
+      },
+      "target_none": {
+        "title": "No target",
+        "description": "Charge Ahead only provides the plan as sensors. Use them in your own automations."
+      },
+      "target_entities": {
+        "title": "Target entities",
+        "description": "Charge Ahead writes the target SoC and the departure time into these entities.",
+        "data": {
+          "target_soc_entity": "Target SoC entity",
+          "departure_entity": "Departure time entity"
+        }
+      },
+      "target_action": {
+        "title": "Target actions",
+        "description": "Available variables: `target_soc` (%), `departure` (ISO 8601), `energy_kwh`. Example for evcc: `evcc_intg.set_vehicle_plan` with `soc: \"{{ target_soc }}\"` and `startdate: \"{{ departure }}\"`.",
+        "data": {
+          "set_action": "Set plan",
+          "clear_action": "Clear plan"
+        },
+        "data_description": {
+          "set_action": "Runs when a plan is created or changes.",
+          "clear_action": "Runs when the trip is gone. Optional."
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Charge Ahead",
+        "data": {
+          "calendar_entity": "Trip calendar"
+        }
+      },
+      "target": {
+        "title": "Plan target",
+        "description": "Where should the computed target SoC and departure time go?",
+        "menu_options": {
+          "target_none": "Nowhere, only provide sensors",
+          "target_entities": "Write into entities",
+          "target_action": "Run actions"
+        }
+      },
+      "target_none": {
+        "title": "No target",
+        "description": "Charge Ahead only provides the plan as sensors. Use them in your own automations."
+      },
+      "target_entities": {
+        "title": "Target entities",
+        "description": "Charge Ahead writes the target SoC and the departure time into these entities.",
+        "data": {
+          "target_soc_entity": "Target SoC entity",
+          "departure_entity": "Departure time entity"
+        }
+      },
+      "target_action": {
+        "title": "Target actions",
+        "description": "Available variables: `target_soc` (%), `departure` (ISO 8601), `energy_kwh`. Example for evcc: `evcc_intg.set_vehicle_plan` with `soc: \"{{ target_soc }}\"` and `startdate: \"{{ departure }}\"`.",
+        "data": {
+          "set_action": "Set plan",
+          "clear_action": "Clear plan"
+        },
+        "data_description": {
+          "set_action": "Runs when a plan is created or changes.",
+          "clear_action": "Runs when the trip is gone. Optional."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_found": {
+      "message": "No Charge Ahead entry with ID {entry_id}."
+    },
+    "entry_not_loaded": {
+      "message": "Charge Ahead entry {entry_id} is not loaded."
+    }
+  },
+  "services": {
+    "apply_plan": {
+      "name": "Apply plan",
+      "description": "Writes a charging plan to the configured target. Useful to test the target.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "The Charge Ahead entry whose target is used."
+        },
+        "target_soc": {
+          "name": "Target SoC",
+          "description": "State of charge to reach by departure."
+        },
+        "departure": {
+          "name": "Departure",
+          "description": "Time by which the target SoC must be reached."
+        },
+        "energy_kwh": {
+          "name": "Energy",
+          "description": "Energy needed for the trip. Optional."
+        }
+      }
+    },
+    "clear_plan": {
+      "name": "Clear plan",
+      "description": "Runs the clear action of the configured target.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "The Charge Ahead entry whose target is used."
+        }
+      }
+    }
+  }
+}
