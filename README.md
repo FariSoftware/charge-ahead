@@ -1,85 +1,96 @@
-# Charge Ahead
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="custom_components/charge_ahead/brand/dark_logo.png">
+    <img src="custom_components/charge_ahead/brand/logo.png" alt="Charge Ahead" width="420">
+  </picture>
+</p>
 
-Home Assistant integration that makes sure your car is charged in time for the
-next trip in a calendar.
+<p align="center">
+  Your car, charged in time for the next trip in your calendar.
+</p>
 
-Each calendar event with a location is a trip. Charge Ahead determines the
-travel time from home to the location, subtracts a configurable buffer and
-derives the departure time. From the distance (outbound and return) plus a
-reserve it computes the target state of charge. The plan is then handed to a
-target of your choice, for example [evcc](https://evcc.io).
+---
 
-Charge Ahead does not optimise *when* to charge. That stays with your charge
-controller (evcc or similar).
+Charge Ahead is a Home Assistant integration that reads your trips from a
+calendar, works out when you have to leave and how much charge the trip
+needs, and hands that plan to your charge controller, for example
+[evcc](https://evcc.io).
 
-> **Status:** early development (0.x). Configuration and behaviour may still change.
+Put an event with a location into the calendar, from your phone or anywhere
+else. Charge Ahead does the rest:
 
-## How it works
+- **Departure** = event start − travel time − buffer
+- **Target SoC** = energy for the round trip ÷ battery capacity + reserve
+- The plan goes to evcc (or any other target), is updated when the trip
+  changes and removed when the trip is cancelled.
 
-1. Reads the trip calendar for the next days (`calendar.get_events`). A trip is
-   any timed event with a location; all-day events, events without a
-   location and online events ("Online", meeting links) are ignored. The next upcoming trip is planned.
-2. Routes from your home zone to the location with the **Google Maps Travel
-   Time** or **Waze Travel Time** integration (one of them must be set up).
-   Locations with a place name and the address on separate lines (Apple
-   Calendar) are retried with the address line only.
-3. Computes
-   - departure = event start − travel time − buffer
-   - energy = distance × 2 × consumption
-   - target SoC = energy / battery capacity + reserve, rounded up to the SoC step
-   - follow-up trips: if the next trips leave too little time at home to
-     recharge (based on the charging power), the shortfall is added to the
-     current target, so the first departure already carries enough energy
-4. Writes the plan to the target once it changes, and runs the clear action if
-   the trip disappears before departure.
-5. Sends a notification when the target SoC is above the charge limit, above
-   100 %, when the departure has already passed, when the location cannot be
-   routed or when the target fails. Each notification is sent once per trip.
+Charge Ahead does not decide *when* to charge. Solar surplus, cheap hours and
+the actual charging stay with your charge controller.
 
-Consumption is derived from the car's own range estimate when state of charge
-and range entities are configured, otherwise the fixed value is used.
+> **Status:** early development (0.x). Configuration and behaviour may still
+> change between versions.
 
-The calendar is read every update interval (default 15 minutes) and whenever
-the calendar entity changes.
+## Features
 
-## Entities
+- Any Home Assistant calendar as trip source (CalDAV/iCloud, Google, local, …)
+- Routing via the **Google Maps Travel Time** or **Waze Travel Time**
+  integration
+- Consumption derived from the car's own range estimate, so cold weather is
+  taken into account
+- **Follow-up trips:** if the time at home between two trips is too short to
+  recharge, the first departure already carries enough energy for both
+- Built-in **evcc** target; alternatively entities or your own actions
+- Notifications when the plan exceeds the charge limit or the battery, when a
+  location cannot be found, or when the target rejects the plan
+- Sensors for departure, target SoC, energy, distance, travel time and status
 
-| Entity | Content |
+## Requirements
+
+- Home Assistant **2026.11** or newer
+- A calendar entity with your trips
+- The Google Maps Travel Time integration (needs an API key) or the Waze
+  Travel Time integration
+- For the evcc target: the [evcc integration](https://github.com/marq24/ha-evcc)
+  by marq24
+
+## Installation
+
+[![Open your Home Assistant instance and open this repository in the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=FariSoftware&repository=charge-ahead&category=integration)
+
+Or manually:
+
+1. **Settings → Marketplace → Add from link**, enter
+   `https://github.com/FariSoftware/charge-ahead`, category **Integration**.
+2. Download **Charge Ahead** and restart Home Assistant.
+3. **Settings → Devices & services → Add integration → Charge Ahead**.
+
+## Configuration
+
+The setup walks through five steps. Everything can be changed later under
+**Configure**.
+
+| Step | What you set |
 |---|---|
-| Status | `planned`, `no_trip`, `departure_passed`, `routing_failed`, `vehicle_data_missing`, `target_failed`; attributes `warnings`, `error`, `consumption_kwh_per_100km`, `chained_trips` |
-| Departure | Planned departure time |
-| Target SoC | Target state of charge in % |
-| Energy needed | Energy needed at departure above the reserve, in kWh (includes follow-up trips) |
-| Distance | One-way distance in km |
-| Travel time | One-way travel time in minutes |
-| Next trip | Event summary; attributes `start`, `location` |
-| Resend plan (button) | Writes the current plan to the target again, e.g. after it was deleted there |
+| **Trips** | Name and the calendar that holds your trips |
+| **Routing** | Google Maps or Waze, the home zone (start of every trip) |
+| **Vehicle** | Battery capacity, state of charge, range, consumption, charge limit, charging power at home. Prefilled from evcc if it is installed. |
+| **Planning** | Departure buffer, reserve on return, SoC step, look-ahead, update interval, notifications |
+| **Target** | Where the plan goes (see below) |
 
-## Plan targets
+### Plan targets
 
 | Target | What happens |
 |---|---|
-| evcc | Sets a one-time SoC plan for the chosen vehicle via the [evcc integration](https://github.com/marq24/ha-evcc) and deletes it when the trip is gone. Offered only when that integration is installed. |
-| None | The plan is only exposed as sensors (planned). |
-| Entities | Target SoC goes to a `number`/`input_number`, departure to a `datetime`/`input_datetime`. |
-| Actions | Your own action sequence runs with the variables `target_soc`, `departure` (ISO 8601 with offset), `departure_local` (local time, `YYYY-MM-DD HH:MM:SS`) and `energy_kwh`. |
+| **evcc** | Sets a one-time charging plan (target SoC and departure) for the chosen vehicle and deletes it when the trip is gone. Repeating plans in evcc stay untouched. Offered when the evcc integration is installed. |
+| **Entities** | Writes the target SoC into a `number`/`input_number` and the departure into a `datetime`/`input_datetime`. |
+| **Actions** | Runs your own action sequence with the variables `target_soc`, `departure` (ISO 8601 with offset), `departure_local` (local time, `YYYY-MM-DD HH:MM:SS`) and `energy_kwh`. |
+| **None** | Only provides the sensors, for your own automations. |
 
-### Example: evcc via actions
+<details>
+<summary>Example: evcc through custom actions</summary>
 
-The **evcc** target needs no YAML. The action example below is only useful
-if you want to customise the calls. Choose **Run actions** and use:
-
-```yaml
-action: evcc_intg.set_vehicle_plan
-data:
-  vehicle: "db:1"
-  soc: "{{ target_soc }}"
-  startdate: "{{ departure_local }}"
-```
-
-The evcc integration only accepts `YYYY-MM-DD HH:MM:SS` in local time, hence
-`departure_local`. It reports errors in its response instead of raising them,
-so a wrong value fails silently. To surface such errors, capture the response:
+The built-in evcc target covers this. Use actions only if you need something
+different. Templates only work in YAML mode of the action editor.
 
 ```yaml
 - action: evcc_intg.set_vehicle_plan
@@ -94,7 +105,8 @@ so a wrong value fails silently. To surface such errors, capture the response:
       error: true
 ```
 
-Clear action:
+The evcc integration reports errors in its response instead of raising them,
+hence the check. Clear action:
 
 ```yaml
 action: evcc_intg.del_vehicle_plan
@@ -102,28 +114,91 @@ data:
   vehicle: "db:1"
 ```
 
-## Installation
+</details>
 
-Requires Home Assistant 2026.11 or newer.
+### Notifications
 
-1. **Settings → Marketplace → Add from link**, enter
-   `https://github.com/FariSoftware/charge-ahead`, category **Integration**.
-2. Download **Charge Ahead**.
-3. **Settings → Devices & services → Add integration → Charge Ahead**.
+Enter a notify entity (`notify.my_phone`) or a notify action
+(`notify.mobile_app_iphone`) in the planning step. Each message is sent once
+per trip, in German or English depending on the Home Assistant language.
 
-## Testing a target
+## How trips are planned
 
-**Settings → Tools → Actions**, run `charge_ahead.apply_plan` with your entry,
-a target SoC and a departure time. Check that the target received the values.
+A **trip** is a calendar event with a start time and a location. All-day
+events, events without a location and online events ("Online", "Teams",
+meeting links) are ignored. Charge Ahead plans the next upcoming trip.
+
+Locations that hold a place name and the address on separate lines, as Apple
+Calendar stores them, are retried with the address line alone if the full
+text cannot be routed.
+
+**Example:** a meeting at 11:00, 33 km away, 52 minutes by car, 15 minutes
+buffer, 15.8 kWh/100 km, 56 kWh battery, 20 % reserve:
+
+- departure: 11:00 − 52 min − 15 min = **09:53**
+- energy: 2 × 33 km × 15.8 kWh/100 km = 10.4 kWh = 19 % of the battery
+- target SoC: 19 % + 20 % = **39 %**
+
+**Follow-up trips.** If you are back at 12:52 and leave for the next trip at
+13:00, there is no time to recharge. Charge Ahead works backwards through the
+following trips: before each trip the battery must hold that trip's energy
+plus whatever the next trip lacks after recharging at home in between (based
+on the charging power), and never less than the reserve. Trips are only
+followed while the time at home would not allow a full charge, at most five.
+
+The calendar is read every update interval (default 15 minutes) and whenever
+the calendar entity changes. A plan is written only when it changes; it is
+remembered across restarts so a cancelled trip is always cleaned up.
+
+## Entities
+
+| Entity | Content |
+|---|---|
+| Status | `planned`, `no_trip`, `departure_passed`, `routing_failed`, `vehicle_data_missing`, `target_failed`; attributes: warnings, error, consumption, follow-up trips included |
+| Departure | Planned departure time |
+| Target SoC | Target state of charge in % |
+| Energy needed | Energy needed at departure above the reserve, in kWh |
+| Distance | One-way distance in km |
+| Travel time | One-way travel time in minutes |
+| Next trip | Event title; attributes start and location |
+| Resend plan | Button: writes the current plan to the target again, e.g. after it was deleted there |
+
+## Actions
+
+| Action | Purpose |
+|---|---|
+| `charge_ahead.apply_plan` | Write a given SoC and departure to the configured target. Useful to test a target. |
+| `charge_ahead.clear_plan` | Run the target's clear step. |
+
+## Limitations
+
+- One vehicle per entry. Add another entry for a second car.
+- Every trip is assumed to start and end at home.
+- Travel time is the current estimate when planning, not a forecast for the
+  departure time.
+- With the evcc target, Charge Ahead uses the vehicle's one-time plan and
+  overwrites a one-time plan set by hand.
+
+## Troubleshooting
+
+- **Status `routing_failed`:** the location could not be routed. Check the
+  location text; with Waze, check the region.
+- **Plan missing in the charge controller:** press **Resend plan**.
+- **Debug logging:** **Settings → Devices & services → Charge Ahead → ⋮ →
+  Enable debug logging**, reproduce the problem, then disable it again to
+  download the log.
 
 ## Development
 
 ```bash
 python3.14 -m venv .venv
 .venv/bin/pip install -r requirements_test.txt ruff
-.venv/bin/pytest
+.venv/bin/ruff check . && .venv/bin/pytest
 ```
+
+The planner core (`planner.py`) has no Home Assistant dependency and is tested
+on its own.
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+[MIT](LICENSE) © Fari Software GmbH

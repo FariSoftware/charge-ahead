@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256.00 256.00">
+<defs>
+  <mask id="tabgap" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
+    <rect width="256" height="256" fill="#fff"/>
+    <rect x="62" y="8" width="42" height="68" rx="21" fill="#000"/>
+    <rect x="152" y="8" width="42" height="68" rx="21" fill="#000"/>
+  </mask>
+</defs>
+<g transform="translate(0,0)">
+  <g mask="url(#tabgap)">
+    <rect x="20" y="40" width="216" height="196" rx="40" fill="#0FA37F"/>
+    <path d="M20 80 a40 40 0 0 1 40 -40 h136 a40 40 0 0 1 40 40 v10 h-216 z" fill="#0A7A5F"/>
+  </g>
+  <rect x="70" y="16" width="26" height="52" rx="13" fill="#0A7A5F"/>
+  <rect x="160" y="16" width="26" height="52" rx="13" fill="#0A7A5F"/>
+  <path d="M148 102 L88 172 H123 L108 226 L172 150 H134 L152 102 Z" fill="#FFFFFF"/>
+</g>
+</svg>
