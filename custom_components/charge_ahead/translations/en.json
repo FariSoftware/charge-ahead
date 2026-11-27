@@ -67,9 +67,18 @@
         "title": "Plan target",
         "description": "Where should the computed target SoC and departure time go?",
         "menu_options": {
+          "target_evcc": "evcc",
           "target_none": "Nowhere, only provide sensors",
           "target_entities": "Write into entities",
           "target_action": "Run actions"
+        }
+      },
+      "target_evcc": {
+        "title": "evcc",
+        "description": "Charge Ahead sets a one-time charging plan (target SoC and departure) for this vehicle in evcc and deletes it when the trip is gone. Repeating plans in evcc stay untouched.",
+        "data": {
+          "evcc_vehicle": "Vehicle",
+          "evcc_config_entry": "evcc instance"
         }
       },
       "target_none": {
@@ -168,9 +177,18 @@
         "title": "Plan target",
         "description": "Where should the computed target SoC and departure time go?",
         "menu_options": {
+          "target_evcc": "evcc",
           "target_none": "Nowhere, only provide sensors",
           "target_entities": "Write into entities",
           "target_action": "Run actions"
+        }
+      },
+      "target_evcc": {
+        "title": "evcc",
+        "description": "Charge Ahead sets a one-time charging plan (target SoC and departure) for this vehicle in evcc and deletes it when the trip is gone. Repeating plans in evcc stay untouched.",
+        "data": {
+          "evcc_vehicle": "Vehicle",
+          "evcc_config_entry": "evcc instance"
         }
       },
       "target_none": {

@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from typing import Any, cast
 
 from homeassistant.const import CONF_NAME
-from homeassistant.helpers import selector
+from homeassistant.helpers import entity_registry as er, selector
 from homeassistant.helpers.schema_config_entry_flow import (
     SchemaCommonFlowHandler,
     SchemaConfigFlowHandler,
@@ -25,6 +25,8 @@ from .const import (
     CONF_CONSUMPTION,
     CONF_DEPARTURE_BUFFER,
     CONF_DEPARTURE_ENTITY,
+    CONF_EVCC_ENTRY,
+    CONF_EVCC_VEHICLE,
     CONF_GOOGLE_ENTRY,
     CONF_HOME_ZONE,
     CONF_LOOK_AHEAD_DAYS,
@@ -51,6 +53,7 @@ from .const import (
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_WAZE_REGION,
     DOMAIN,
+    EVCC_DOMAIN,
     RoutingProvider,
     TargetType,
 )
@@ -60,9 +63,69 @@ _TARGET_KEYS = (
     CONF_DEPARTURE_ENTITY,
     CONF_SET_ACTION,
     CONF_CLEAR_ACTION,
+    CONF_EVCC_VEHICLE,
+    CONF_EVCC_ENTRY,
 )
 
 TARGET_MENU = ["target_none", "target_entities", "target_action"]
+
+
+async def _target_menu(handler: SchemaCommonFlowHandler) -> list[str]:
+    """Offer evcc first when the evcc integration is installed."""
+    hass = handler.parent_handler.hass
+    if hass.services.has_service(EVCC_DOMAIN, "set_vehicle_plan"):
+        return ["target_evcc", *TARGET_MENU]
+    return TARGET_MENU
+
+
+def evcc_vehicles(hass) -> list[selector.SelectOptionDict]:
+    """Return the vehicles known to the evcc integration.
+
+    Read from its vehicle select entities; the current vehicle also carries
+    its display name.
+    """
+    vehicles: dict[str, str] = {}
+    registry = er.async_get(hass)
+    for entry in registry.entities.values():
+        if entry.platform != EVCC_DOMAIN or entry.domain != "select":
+            continue
+        if not entry.entity_id.endswith("_vehicle_name"):
+            continue
+        state = hass.states.get(entry.entity_id)
+        if state is None:
+            continue
+        current = state.attributes.get("vehicle") or {}
+        for option in state.attributes.get("options", []):
+            if option in ("null", "", None):
+                continue
+            label = option
+            if current.get("evccName") == option and current.get("name"):
+                label = f"{current['name']} ({option})"
+            vehicles.setdefault(option, label)
+    return [
+        selector.SelectOptionDict(value=value, label=label)
+        for value, label in vehicles.items()
+    ]
+
+
+async def _evcc_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
+    hass = handler.parent_handler.hass
+    vehicles = evcc_vehicles(hass)
+    vehicle_key = (
+        vol.Required(CONF_EVCC_VEHICLE, default=vehicles[0]["value"])
+        if len(vehicles) == 1
+        else vol.Required(CONF_EVCC_VEHICLE)
+    )
+    schema: dict[Any, Any] = {
+        vehicle_key: selector.SelectSelector(
+            selector.SelectSelectorConfig(options=vehicles, custom_value=True)
+        )
+    }
+    if len(hass.config_entries.async_entries(EVCC_DOMAIN)) > 1:
+        schema[vol.Required(CONF_EVCC_ENTRY)] = selector.ConfigEntrySelector(
+            selector.ConfigEntrySelectorConfig(integration=EVCC_DOMAIN)
+        )
+    return vol.Schema(schema)
 
 
 def _number(
@@ -218,7 +281,10 @@ COMMON_STEPS = {
     "planning": SchemaFlowFormStep(
         PLANNING_SCHEMA, validate_user_input=_validate_planning, next_step="target"
     ),
-    "target": SchemaFlowMenuStep(TARGET_MENU),
+    "target": SchemaFlowMenuStep(_target_menu),
+    "target_evcc": SchemaFlowFormStep(
+        _evcc_schema, validate_user_input=_target_validator(TargetType.EVCC)
+    ),
     "target_none": SchemaFlowFormStep(
         TARGET_NONE_SCHEMA, validate_user_input=_target_validator(TargetType.NONE)
     ),

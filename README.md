@@ -59,14 +59,15 @@ the calendar entity changes.
 
 | Target | What happens |
 |---|---|
+| evcc | Sets a one-time SoC plan for the chosen vehicle via the [evcc integration](https://github.com/marq24/ha-evcc) and deletes it when the trip is gone. Offered only when that integration is installed. |
 | None | The plan is only exposed as sensors (planned). |
 | Entities | Target SoC goes to a `number`/`input_number`, departure to a `datetime`/`input_datetime`. |
 | Actions | Your own action sequence runs with the variables `target_soc`, `departure` (ISO 8601 with offset), `departure_local` (local time, `YYYY-MM-DD HH:MM:SS`) and `energy_kwh`. |
 
-### Example: evcc
+### Example: evcc via actions
 
-With the [evcc integration](https://github.com/marq24/ha-evcc), choose
-**Run actions** and use:
+The **evcc** target needs no YAML. The action example below is only useful
+if you want to customise the calls. Choose **Run actions** and use:
 
 ```yaml
 action: evcc_intg.set_vehicle_plan

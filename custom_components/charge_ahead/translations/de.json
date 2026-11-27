@@ -67,9 +67,18 @@
         "title": "Ziel des Plans",
         "description": "Wohin sollen Ziel-SoC und Abfahrtszeit geschrieben werden?",
         "menu_options": {
+          "target_evcc": "evcc",
           "target_none": "Nirgendwohin, nur Sensoren bereitstellen",
           "target_entities": "In Entitäten schreiben",
           "target_action": "Aktionen ausführen"
+        }
+      },
+      "target_evcc": {
+        "title": "evcc",
+        "description": "Charge Ahead setzt für dieses Fahrzeug einen einmaligen Ladeplan (Ziel-SoC und Abfahrt) in evcc und löscht ihn, wenn die Fahrt wegfällt. Wiederholende Pläne in evcc bleiben unberührt.",
+        "data": {
+          "evcc_vehicle": "Fahrzeug",
+          "evcc_config_entry": "evcc-Instanz"
         }
       },
       "target_none": {
@@ -168,9 +177,18 @@
         "title": "Ziel des Plans",
         "description": "Wohin sollen Ziel-SoC und Abfahrtszeit geschrieben werden?",
         "menu_options": {
+          "target_evcc": "evcc",
           "target_none": "Nirgendwohin, nur Sensoren bereitstellen",
           "target_entities": "In Entitäten schreiben",
           "target_action": "Aktionen ausführen"
+        }
+      },
+      "target_evcc": {
+        "title": "evcc",
+        "description": "Charge Ahead setzt für dieses Fahrzeug einen einmaligen Ladeplan (Ziel-SoC und Abfahrt) in evcc und löscht ihn, wenn die Fahrt wegfällt. Wiederholende Pläne in evcc bleiben unberührt.",
+        "data": {
+          "evcc_vehicle": "Fahrzeug",
+          "evcc_config_entry": "evcc-Instanz"
         }
       },
       "target_none": {

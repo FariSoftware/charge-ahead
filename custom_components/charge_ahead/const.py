@@ -39,6 +39,10 @@ CONF_TARGET_SOC_ENTITY: Final = "target_soc_entity"
 CONF_DEPARTURE_ENTITY: Final = "departure_entity"
 CONF_SET_ACTION: Final = "set_action"
 CONF_CLEAR_ACTION: Final = "clear_action"
+CONF_EVCC_VEHICLE: Final = "evcc_vehicle"
+CONF_EVCC_ENTRY: Final = "evcc_config_entry"
+
+EVCC_DOMAIN: Final = "evcc_intg"
 
 DEFAULT_HOME_ZONE: Final = "zone.home"
 DEFAULT_WAZE_REGION: Final = "eu"
@@ -70,6 +74,7 @@ class TargetType(StrEnum):
     NONE = "none"
     ENTITIES = "entities"
     ACTION = "action"
+    EVCC = "evcc"
 
 
 class RoutingProvider(StrEnum):

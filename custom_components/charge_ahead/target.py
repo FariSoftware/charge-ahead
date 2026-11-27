@@ -22,10 +22,13 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_CLEAR_ACTION,
     CONF_DEPARTURE_ENTITY,
+    CONF_EVCC_ENTRY,
+    CONF_EVCC_VEHICLE,
     CONF_SET_ACTION,
     CONF_TARGET_SOC_ENTITY,
     CONF_TARGET_TYPE,
     DOMAIN,
+    EVCC_DOMAIN,
     TargetType,
 )
 
@@ -181,6 +184,65 @@ async def _async_run_checked(
         raise HomeAssistantError(f"{script.name}: action stopped with an error")
 
 
+class EvccTarget:
+    """Target for the evcc integration (marq24/ha-evcc).
+
+    That integration returns errors in its response data instead of raising
+    them, and only accepts the departure as local "YYYY-MM-DD HH:MM:SS".
+    """
+
+    # The delete endpoint answers with an empty body, which the integration
+    # reports as this "error" although the plan was removed.
+    _EMPTY_RESPONSE = "NO or EMPTY response"
+
+    def __init__(
+        self, hass: HomeAssistant, vehicle: str, config_entry_id: str | None
+    ) -> None:
+        """Initialize the target."""
+        self._hass = hass
+        self._vehicle = vehicle
+        self._config_entry_id = config_entry_id
+
+    def _data(self, **extra: Any) -> dict[str, Any]:
+        data: dict[str, Any] = {"vehicle": self._vehicle, **extra}
+        if self._config_entry_id:
+            data["config_entry_id"] = self._config_entry_id
+        return data
+
+    async def async_apply(self, plan: ChargePlan, context: Context | None) -> None:
+        """Set a one-time SoC plan for the vehicle."""
+        response = await self._hass.services.async_call(
+            EVCC_DOMAIN,
+            "set_vehicle_plan",
+            self._data(
+                soc=plan.target_soc,
+                startdate=plan.as_variables()["departure_local"],
+            ),
+            blocking=True,
+            context=context,
+            return_response=True,
+        )
+        if isinstance(response, dict) and (error := response.get("error")):
+            raise HomeAssistantError(f"evcc rejected the plan: {error}")
+
+    async def async_clear(self, context: Context | None) -> None:
+        """Delete the vehicle's one-time plan."""
+        response = await self._hass.services.async_call(
+            EVCC_DOMAIN,
+            "del_vehicle_plan",
+            self._data(),
+            blocking=True,
+            context=context,
+            return_response=True,
+        )
+        if (
+            isinstance(response, dict)
+            and (error := response.get("error"))
+            and error != self._EMPTY_RESPONSE
+        ):
+            raise HomeAssistantError(f"evcc could not delete the plan: {error}")
+
+
 async def async_build_target(
     hass: HomeAssistant, name: str, options: dict[str, Any]
 ) -> PlanTarget:
@@ -190,6 +252,11 @@ async def async_build_target(
     if target_type is TargetType.ENTITIES:
         return EntityTarget(
             hass, options[CONF_TARGET_SOC_ENTITY], options[CONF_DEPARTURE_ENTITY]
+        )
+
+    if target_type is TargetType.EVCC:
+        return EvccTarget(
+            hass, options[CONF_EVCC_VEHICLE], options.get(CONF_EVCC_ENTRY)
         )
 
     if target_type is TargetType.ACTION:
