@@ -6,14 +6,17 @@ it to a PlanTarget built from the config entry options.
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 import logging
 from typing import Any, Protocol
 
 from homeassistant.core import Context, HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.script import Script, async_validate_actions_config
+from homeassistant.helpers.trace import script_execution_get, trace_clear
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -150,12 +153,32 @@ class ActionTarget:
 
     async def async_apply(self, plan: ChargePlan, context: Context | None) -> None:
         """Run the set action with the plan as variables."""
-        await self._set_script.async_run(plan.as_variables(), context=context)
+        await _async_run_checked(self._set_script, plan.as_variables(), context)
 
     async def async_clear(self, context: Context | None) -> None:
         """Run the clear action, if configured."""
         if self._clear_script is not None:
-            await self._clear_script.async_run({}, context=context)
+            await _async_run_checked(self._clear_script, {}, context)
+
+
+async def _async_run_checked(
+    script: Script, variables: dict[str, Any], context: Context | None
+) -> None:
+    """Run a script and raise if it was aborted.
+
+    A top-level script swallows "stop ... error: true" and failed conditions and
+    only records them as the execution result. Run it in its own task so the
+    trace context is isolated, then turn an abort into an exception.
+    """
+
+    async def _run() -> str | None:
+        trace_clear()
+        await script.async_run(variables, context=context)
+        return script_execution_get()
+
+    result = await asyncio.create_task(_run())
+    if result == "aborted":
+        raise HomeAssistantError(f"{script.name}: action stopped with an error")
 
 
 async def async_build_target(

@@ -8,13 +8,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 import pytest
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_mock_service,
-)
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.charge_ahead.const import (
-    CONF_CALENDAR_ENTITY,
     CONF_CLEAR_ACTION,
     CONF_DEPARTURE_ENTITY,
     CONF_SET_ACTION,
@@ -26,24 +22,13 @@ from custom_components.charge_ahead.const import (
 DEPARTURE = "2026-12-01T07:30:00+01:00"
 
 
-async def _setup(hass: HomeAssistant, options: dict) -> MockConfigEntry:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Elroq",
-        options={"name": "Elroq", CONF_CALENDAR_ENTITY: "calendar.car", **options},
-    )
-    entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-    return entry
-
-
-async def test_action_target_renders_variables(hass: HomeAssistant) -> None:
+async def test_action_target_renders_variables(
+    hass: HomeAssistant, setup_entry
+) -> None:
     """The set action receives target_soc, departure and energy_kwh."""
     calls = async_mock_service(hass, "test", "set_plan")
-    entry = await _setup(
-        hass,
-        {
+    entry = await setup_entry(
+        **{
             CONF_TARGET_TYPE: "action",
             CONF_SET_ACTION: [
                 {
@@ -82,12 +67,11 @@ async def test_action_target_renders_variables(hass: HomeAssistant) -> None:
     ).strftime("%Y-%m-%d %H:%M:%S")
 
 
-async def test_action_target_clear(hass: HomeAssistant) -> None:
+async def test_action_target_clear(hass: HomeAssistant, setup_entry) -> None:
     """clear_plan runs the clear action."""
     calls = async_mock_service(hass, "test", "clear_plan")
-    entry = await _setup(
-        hass,
-        {
+    entry = await setup_entry(
+        **{
             CONF_TARGET_TYPE: "action",
             CONF_SET_ACTION: [{"action": "test.set_plan"}],
             CONF_CLEAR_ACTION: [{"action": "test.clear_plan"}],
@@ -100,13 +84,12 @@ async def test_action_target_clear(hass: HomeAssistant) -> None:
     assert len(calls) == 1
 
 
-async def test_entity_target(hass: HomeAssistant) -> None:
+async def test_entity_target(hass: HomeAssistant, setup_entry) -> None:
     """The entity target calls number.set_value and datetime.set_value."""
     number_calls = async_mock_service(hass, "number", "set_value")
     datetime_calls = async_mock_service(hass, "datetime", "set_value")
-    entry = await _setup(
-        hass,
-        {
+    entry = await setup_entry(
+        **{
             CONF_TARGET_TYPE: "entities",
             CONF_TARGET_SOC_ENTITY: "number.target_soc",
             CONF_DEPARTURE_ENTITY: "datetime.departure",
@@ -125,9 +108,9 @@ async def test_entity_target(hass: HomeAssistant) -> None:
     assert datetime_calls[0].data["datetime"] == datetime.fromisoformat(DEPARTURE)
 
 
-async def test_unknown_entry(hass: HomeAssistant) -> None:
+async def test_unknown_entry(hass: HomeAssistant, setup_entry) -> None:
     """An unknown entry id raises a validation error."""
-    await _setup(hass, {CONF_TARGET_TYPE: "none"})
+    await setup_entry(**{CONF_TARGET_TYPE: "none"})
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,

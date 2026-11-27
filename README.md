@@ -12,9 +12,44 @@ target of your choice, for example [evcc](https://evcc.io).
 Charge Ahead does not optimise *when* to charge. That stays with your charge
 controller (evcc or similar).
 
-> **Status:** early development. The planner is not implemented yet. The current
-> version contains the configuration flow and the plan targets, so a target can
-> be tested with the `charge_ahead.apply_plan` action.
+> **Status:** early development (0.x). Configuration and behaviour may still change.
+
+## How it works
+
+1. Reads the trip calendar for the next days (`calendar.get_events`). A trip is
+   any timed event with a location; all-day events and events without a
+   location are ignored. The next upcoming trip is planned.
+2. Routes from your home zone to the location with the **Google Maps Travel
+   Time** or **Waze Travel Time** integration (one of them must be set up).
+   Locations with a place name and the address on separate lines (Apple
+   Calendar) are retried with the address line only.
+3. Computes
+   - departure = event start − travel time − buffer
+   - energy = distance × 2 × consumption
+   - target SoC = energy / battery capacity + reserve, rounded up to the SoC step
+4. Writes the plan to the target once it changes, and runs the clear action if
+   the trip disappears before departure.
+5. Sends a notification when the target SoC is above the charge limit, above
+   100 %, when the departure has already passed, when the location cannot be
+   routed or when the target fails. Each notification is sent once per trip.
+
+Consumption is derived from the car's own range estimate when state of charge
+and range entities are configured, otherwise the fixed value is used.
+
+The calendar is read every update interval (default 15 minutes) and whenever
+the calendar entity changes.
+
+## Entities
+
+| Entity | Content |
+|---|---|
+| Status | `planned`, `no_trip`, `departure_passed`, `routing_failed`, `vehicle_data_missing`, `target_failed`; attributes `warnings`, `error`, `consumption_kwh_per_100km` |
+| Departure | Planned departure time |
+| Target SoC | Target state of charge in % |
+| Energy needed | Energy for the round trip in kWh |
+| Distance | One-way distance in km |
+| Travel time | One-way travel time in minutes |
+| Next trip | Event summary; attributes `start`, `location` |
 
 ## Plan targets
 

@@ -3,10 +3,62 @@
     "step": {
       "user": {
         "title": "Charge Ahead",
-        "description": "Plans charging from the trips in a calendar. Each event with a location is a trip.",
+        "description": "Plans charging from the trips in a calendar. Each timed event with a location is a trip.",
         "data": {
           "name": "Name",
           "calendar_entity": "Trip calendar"
+        }
+      },
+      "routing": {
+        "title": "Routing",
+        "description": "Travel time and distance from home to the trip location.",
+        "data": {
+          "routing_provider": "Routing provider",
+          "google_config_entry": "Google Maps Travel Time entry",
+          "waze_region": "Waze region",
+          "home_zone": "Home"
+        },
+        "data_description": {
+          "routing_provider": "Uses an existing travel time integration.",
+          "google_config_entry": "Required for Google Maps.",
+          "waze_region": "Only used with Waze.",
+          "home_zone": "Start of every trip."
+        }
+      },
+      "vehicle": {
+        "title": "Vehicle",
+        "description": "Entities take precedence over fixed values when they have a valid state.",
+        "data": {
+          "capacity_kwh": "Battery capacity",
+          "capacity_entity": "Battery capacity entity",
+          "soc_entity": "State of charge entity",
+          "range_entity": "Range entity",
+          "consumption_kwh_per_100km": "Consumption",
+          "soc_limit_entity": "Charge limit entity"
+        },
+        "data_description": {
+          "soc_entity": "Together with range, used to derive the current consumption.",
+          "range_entity": "The car's own range estimate in km.",
+          "consumption_kwh_per_100km": "Used when state of charge or range is not available.",
+          "soc_limit_entity": "A warning is sent when a trip needs more than this limit."
+        }
+      },
+      "planning": {
+        "title": "Planning",
+        "data": {
+          "departure_buffer_min": "Departure buffer",
+          "reserve_percent": "Reserve on return",
+          "soc_step": "Target SoC step",
+          "look_ahead_days": "Look ahead",
+          "update_interval_min": "Update interval",
+          "notify_target": "Notifications"
+        },
+        "data_description": {
+          "departure_buffer_min": "Leave this much earlier than the travel time requires.",
+          "reserve_percent": "State of charge left after the round trip.",
+          "soc_step": "The target SoC is rounded up to this step.",
+          "look_ahead_days": "How far ahead the calendar is read.",
+          "notify_target": "A notify entity (notify.xyz) or a notify action such as notify.mobile_app_iphone. Optional."
         }
       },
       "target": {
@@ -39,9 +91,13 @@
         },
         "data_description": {
           "set_action": "Runs when a plan is created or changes.",
-          "clear_action": "Runs when the trip is gone. Optional."
+          "clear_action": "Runs when the trip is gone before departure. Optional."
         }
       }
+    },
+    "error": {
+      "google_entry_required": "Select a Google Maps Travel Time entry.",
+      "notify_not_found": "No notify entity or action with this name."
     }
   },
   "options": {
@@ -52,6 +108,58 @@
           "calendar_entity": "Trip calendar"
         }
       },
+      "routing": {
+        "title": "Routing",
+        "description": "Travel time and distance from home to the trip location.",
+        "data": {
+          "routing_provider": "Routing provider",
+          "google_config_entry": "Google Maps Travel Time entry",
+          "waze_region": "Waze region",
+          "home_zone": "Home"
+        },
+        "data_description": {
+          "routing_provider": "Uses an existing travel time integration.",
+          "google_config_entry": "Required for Google Maps.",
+          "waze_region": "Only used with Waze.",
+          "home_zone": "Start of every trip."
+        }
+      },
+      "vehicle": {
+        "title": "Vehicle",
+        "description": "Entities take precedence over fixed values when they have a valid state.",
+        "data": {
+          "capacity_kwh": "Battery capacity",
+          "capacity_entity": "Battery capacity entity",
+          "soc_entity": "State of charge entity",
+          "range_entity": "Range entity",
+          "consumption_kwh_per_100km": "Consumption",
+          "soc_limit_entity": "Charge limit entity"
+        },
+        "data_description": {
+          "soc_entity": "Together with range, used to derive the current consumption.",
+          "range_entity": "The car's own range estimate in km.",
+          "consumption_kwh_per_100km": "Used when state of charge or range is not available.",
+          "soc_limit_entity": "A warning is sent when a trip needs more than this limit."
+        }
+      },
+      "planning": {
+        "title": "Planning",
+        "data": {
+          "departure_buffer_min": "Departure buffer",
+          "reserve_percent": "Reserve on return",
+          "soc_step": "Target SoC step",
+          "look_ahead_days": "Look ahead",
+          "update_interval_min": "Update interval",
+          "notify_target": "Notifications"
+        },
+        "data_description": {
+          "departure_buffer_min": "Leave this much earlier than the travel time requires.",
+          "reserve_percent": "State of charge left after the round trip.",
+          "soc_step": "The target SoC is rounded up to this step.",
+          "look_ahead_days": "How far ahead the calendar is read.",
+          "notify_target": "A notify entity (notify.xyz) or a notify action such as notify.mobile_app_iphone. Optional."
+        }
+      },
       "target": {
         "title": "Plan target",
         "description": "Where should the computed target SoC and departure time go?",
@@ -82,8 +190,67 @@
         },
         "data_description": {
           "set_action": "Runs when a plan is created or changes.",
-          "clear_action": "Runs when the trip is gone. Optional."
+          "clear_action": "Runs when the trip is gone before departure. Optional."
         }
+      }
+    },
+    "error": {
+      "google_entry_required": "Select a Google Maps Travel Time entry.",
+      "notify_not_found": "No notify entity or action with this name."
+    }
+  },
+  "selector": {
+    "routing_provider": {
+      "options": {
+        "google": "Google Maps",
+        "waze": "Waze"
+      }
+    },
+    "waze_region": {
+      "options": {
+        "eu": "Europe",
+        "us": "USA",
+        "na": "North America",
+        "il": "Israel",
+        "au": "Australia"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "planned": "Planned",
+          "no_trip": "No trip",
+          "departure_passed": "Departure passed",
+          "routing_failed": "Location not found",
+          "vehicle_data_missing": "Vehicle data missing",
+          "target_failed": "Target failed"
+        },
+        "state_attributes": {
+          "warnings": {
+            "name": "Warnings"
+          }
+        }
+      },
+      "departure": {
+        "name": "Departure"
+      },
+      "target_soc": {
+        "name": "Target SoC"
+      },
+      "energy": {
+        "name": "Energy needed"
+      },
+      "distance": {
+        "name": "Distance"
+      },
+      "travel_time": {
+        "name": "Travel time"
+      },
+      "trip": {
+        "name": "Next trip"
       }
     }
   },
@@ -119,14 +286,14 @@
       }
     },
     "clear_plan": {
-      "name": "Clear plan",
-      "description": "Runs the clear action of the configured target.",
       "fields": {
         "config_entry_id": {
           "name": "Entry",
           "description": "The Charge Ahead entry whose target is used."
         }
-      }
+      },
+      "name": "Clear plan",
+      "description": "Runs the clear action of the configured target."
     }
   }
 }

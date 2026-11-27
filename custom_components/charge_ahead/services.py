@@ -52,7 +52,7 @@ def _get_target(hass: HomeAssistant, call: ServiceCall) -> PlanTarget:
             translation_key="entry_not_loaded",
             translation_placeholders={"entry_id": entry_id},
         )
-    return entry.runtime_data
+    return entry.runtime_data.target
 
 
 @callback

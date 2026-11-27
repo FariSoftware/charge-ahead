@@ -3,10 +3,62 @@
     "step": {
       "user": {
         "title": "Charge Ahead",
-        "description": "Plant das Laden anhand der Fahrten in einem Kalender. Jeder Termin mit Ort ist eine Fahrt.",
+        "description": "Plant das Laden anhand der Fahrten in einem Kalender. Jeder Termin mit Uhrzeit und Ort ist eine Fahrt.",
         "data": {
           "name": "Name",
           "calendar_entity": "Fahrtenkalender"
+        }
+      },
+      "routing": {
+        "title": "Routing",
+        "description": "Fahrzeit und Entfernung von zu Hause zum Ort der Fahrt.",
+        "data": {
+          "routing_provider": "Routing-Anbieter",
+          "google_config_entry": "Eintrag Google Maps Travel Time",
+          "waze_region": "Waze-Region",
+          "home_zone": "Zuhause"
+        },
+        "data_description": {
+          "routing_provider": "Nutzt eine vorhandene Reisezeit-Integration.",
+          "google_config_entry": "Für Google Maps erforderlich.",
+          "waze_region": "Nur für Waze.",
+          "home_zone": "Startpunkt jeder Fahrt."
+        }
+      },
+      "vehicle": {
+        "title": "Fahrzeug",
+        "description": "Entitäten haben Vorrang vor festen Werten, sofern sie einen gültigen Zustand haben.",
+        "data": {
+          "capacity_kwh": "Akkukapazität",
+          "capacity_entity": "Entität Akkukapazität",
+          "soc_entity": "Entität Ladezustand",
+          "range_entity": "Entität Reichweite",
+          "consumption_kwh_per_100km": "Verbrauch",
+          "soc_limit_entity": "Entität Ladelimit"
+        },
+        "data_description": {
+          "soc_entity": "Zusammen mit der Reichweite wird daraus der aktuelle Verbrauch abgeleitet.",
+          "range_entity": "Reichweitenschätzung des Autos in km.",
+          "consumption_kwh_per_100km": "Gilt, wenn Ladezustand oder Reichweite nicht verfügbar sind.",
+          "soc_limit_entity": "Braucht eine Fahrt mehr als dieses Limit, kommt eine Warnung."
+        }
+      },
+      "planning": {
+        "title": "Planung",
+        "data": {
+          "departure_buffer_min": "Puffer vor Abfahrt",
+          "reserve_percent": "Reserve bei Rückkehr",
+          "soc_step": "Schrittweite Ziel-SoC",
+          "look_ahead_days": "Vorschau",
+          "update_interval_min": "Aktualisierungsintervall",
+          "notify_target": "Benachrichtigungen"
+        },
+        "data_description": {
+          "departure_buffer_min": "So viel früher losfahren, als die Fahrzeit erfordert.",
+          "reserve_percent": "Ladezustand, der nach Hin- und Rückfahrt übrig bleiben soll.",
+          "soc_step": "Der Ziel-SoC wird auf diese Schrittweite aufgerundet.",
+          "look_ahead_days": "Wie weit der Kalender vorausgelesen wird.",
+          "notify_target": "Eine Notify-Entität (notify.xyz) oder eine Notify-Aktion wie notify.mobile_app_iphone. Optional."
         }
       },
       "target": {
@@ -39,9 +91,13 @@
         },
         "data_description": {
           "set_action": "Läuft, wenn ein Plan entsteht oder sich ändert.",
-          "clear_action": "Läuft, wenn die Fahrt wegfällt. Optional."
+          "clear_action": "Läuft, wenn die Fahrt vor der Abfahrt wegfällt. Optional."
         }
       }
+    },
+    "error": {
+      "google_entry_required": "Einen Eintrag von Google Maps Travel Time auswählen.",
+      "notify_not_found": "Keine Notify-Entität oder -Aktion mit diesem Namen."
     }
   },
   "options": {
@@ -52,6 +108,58 @@
           "calendar_entity": "Fahrtenkalender"
         }
       },
+      "routing": {
+        "title": "Routing",
+        "description": "Fahrzeit und Entfernung von zu Hause zum Ort der Fahrt.",
+        "data": {
+          "routing_provider": "Routing-Anbieter",
+          "google_config_entry": "Eintrag Google Maps Travel Time",
+          "waze_region": "Waze-Region",
+          "home_zone": "Zuhause"
+        },
+        "data_description": {
+          "routing_provider": "Nutzt eine vorhandene Reisezeit-Integration.",
+          "google_config_entry": "Für Google Maps erforderlich.",
+          "waze_region": "Nur für Waze.",
+          "home_zone": "Startpunkt jeder Fahrt."
+        }
+      },
+      "vehicle": {
+        "title": "Fahrzeug",
+        "description": "Entitäten haben Vorrang vor festen Werten, sofern sie einen gültigen Zustand haben.",
+        "data": {
+          "capacity_kwh": "Akkukapazität",
+          "capacity_entity": "Entität Akkukapazität",
+          "soc_entity": "Entität Ladezustand",
+          "range_entity": "Entität Reichweite",
+          "consumption_kwh_per_100km": "Verbrauch",
+          "soc_limit_entity": "Entität Ladelimit"
+        },
+        "data_description": {
+          "soc_entity": "Zusammen mit der Reichweite wird daraus der aktuelle Verbrauch abgeleitet.",
+          "range_entity": "Reichweitenschätzung des Autos in km.",
+          "consumption_kwh_per_100km": "Gilt, wenn Ladezustand oder Reichweite nicht verfügbar sind.",
+          "soc_limit_entity": "Braucht eine Fahrt mehr als dieses Limit, kommt eine Warnung."
+        }
+      },
+      "planning": {
+        "title": "Planung",
+        "data": {
+          "departure_buffer_min": "Puffer vor Abfahrt",
+          "reserve_percent": "Reserve bei Rückkehr",
+          "soc_step": "Schrittweite Ziel-SoC",
+          "look_ahead_days": "Vorschau",
+          "update_interval_min": "Aktualisierungsintervall",
+          "notify_target": "Benachrichtigungen"
+        },
+        "data_description": {
+          "departure_buffer_min": "So viel früher losfahren, als die Fahrzeit erfordert.",
+          "reserve_percent": "Ladezustand, der nach Hin- und Rückfahrt übrig bleiben soll.",
+          "soc_step": "Der Ziel-SoC wird auf diese Schrittweite aufgerundet.",
+          "look_ahead_days": "Wie weit der Kalender vorausgelesen wird.",
+          "notify_target": "Eine Notify-Entität (notify.xyz) oder eine Notify-Aktion wie notify.mobile_app_iphone. Optional."
+        }
+      },
       "target": {
         "title": "Ziel des Plans",
         "description": "Wohin sollen Ziel-SoC und Abfahrtszeit geschrieben werden?",
@@ -82,8 +190,67 @@
         },
         "data_description": {
           "set_action": "Läuft, wenn ein Plan entsteht oder sich ändert.",
-          "clear_action": "Läuft, wenn die Fahrt wegfällt. Optional."
+          "clear_action": "Läuft, wenn die Fahrt vor der Abfahrt wegfällt. Optional."
         }
+      }
+    },
+    "error": {
+      "google_entry_required": "Einen Eintrag von Google Maps Travel Time auswählen.",
+      "notify_not_found": "Keine Notify-Entität oder -Aktion mit diesem Namen."
+    }
+  },
+  "selector": {
+    "routing_provider": {
+      "options": {
+        "google": "Google Maps",
+        "waze": "Waze"
+      }
+    },
+    "waze_region": {
+      "options": {
+        "eu": "Europa",
+        "us": "USA",
+        "na": "Nordamerika",
+        "il": "Israel",
+        "au": "Australien"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "planned": "Geplant",
+          "no_trip": "Keine Fahrt",
+          "departure_passed": "Abfahrt verpasst",
+          "routing_failed": "Ort nicht gefunden",
+          "vehicle_data_missing": "Fahrzeugdaten fehlen",
+          "target_failed": "Ziel fehlgeschlagen"
+        },
+        "state_attributes": {
+          "warnings": {
+            "name": "Warnungen"
+          }
+        }
+      },
+      "departure": {
+        "name": "Abfahrt"
+      },
+      "target_soc": {
+        "name": "Ziel-SoC"
+      },
+      "energy": {
+        "name": "Energiebedarf"
+      },
+      "distance": {
+        "name": "Entfernung"
+      },
+      "travel_time": {
+        "name": "Fahrzeit"
+      },
+      "trip": {
+        "name": "Nächste Fahrt"
       }
     }
   },
@@ -119,14 +286,14 @@
       }
     },
     "clear_plan": {
-      "name": "Plan löschen",
-      "description": "Führt die Lösch-Aktion des konfigurierten Ziels aus.",
       "fields": {
         "config_entry_id": {
           "name": "Eintrag",
           "description": "Der Charge-Ahead-Eintrag, dessen Ziel verwendet wird."
         }
-      }
+      },
+      "name": "Plan löschen",
+      "description": "Führt die Lösch-Aktion des konfigurierten Ziels aus."
     }
   }
 }
